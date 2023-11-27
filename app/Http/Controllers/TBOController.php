@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use App\Models\Hotel;
+use App\Models\AahaasMeta;
+use Illuminate\Support\Facades\Log;
 
 class TBOController extends Controller
 {
@@ -70,7 +73,6 @@ class TBOController extends Controller
 
         // return $requestHotelInfo;
 
-
         $getResults = Http::withHeaders($this->getHeader())
             ->post('http://api.tektravels.com/BookingEngineService_Hotel/hotelservice.svc/rest/GetHotelResult/', $requestHotelInfo)->json();
 
@@ -78,39 +80,69 @@ class TBOController extends Controller
 
         // $hotelResultCollection = collect($hotelResultArray);
 
-
         // return $hotelResultArray;
-
-
-
-
+        $validHotels = [];
 
         $utf8Xml = str_replace("utf-16", "utf-8", $staticHotelsData['HotelData']);
         $staticDataXmlToJson = json_decode(json_encode(simplexml_load_string($utf8Xml)), true);
         // return $staticDataXmlToJson;
         $hotelDataSet = [];
 
-        foreach ($hotelResultArray as $key => $hotelResult) {
-            foreach ($staticDataXmlToJson['BasicPropertyInfo'] as $key => $dataSet) {
+        $hotelDataSet = [];
+        foreach ($hotelResultArray as $hotelResult) {
+            foreach ($staticDataXmlToJson['BasicPropertyInfo'] as $dataSet) {
                 $hotelCode = $dataSet['@attributes']['TBOHotelCode'];
-
                 $hotelLat = $dataSet['Position']['@attributes']['Latitude'];
                 $hotelLon = $dataSet['Position']['@attributes']['Longitude'];
-
-                // $hotelDataSet[] = ["HotelCode" => $hotelCode, "Latitude" => $hotelLat, "Longitude" => $hotelLon];
 
                 if ($hotelResult['HotelCode'] == $hotelCode) {
                     $hotelResult['Latitude'] = $hotelLat;
                     $hotelResult['Longitude'] = $hotelLon;
                 }
             }
-
-            $finalHotelDataSet[] = $hotelResult;
+            $hotelDataSet[] = $hotelResult;
         }
 
+        foreach ($hotelDataSet as $hotel) {
+            foreach (Hotel::all(['id', 'latitude', 'longitude']) as $existingHotel) {
+                $hotelLatitude = $hotel['Latitude'];
+                $hotelLongitude = $hotel['Longitude'];
 
-        return $finalHotelDataSet;
+                $latitudeParts = explode('.', $hotelLatitude);
+                $longitudeParts = explode('.', $hotelLongitude);
 
-        // $finalHotelDataSet;
+                if (count($latitudeParts) > 1 && count($longitudeParts) > 1) {
+                    $latitudePrefix = $latitudeParts[1];
+                    $longitudePrefix = $longitudeParts[1];
+
+                    $existingLatitude = $existingHotel->latitude;
+                    $existingLongitude = $existingHotel->longitude;
+
+                    $existingLatitudeParts = explode('.', $existingLatitude);
+                    $existingLongitudeParts = explode('.', $existingLongitude);
+
+                    if (count($existingLatitudeParts) > 1 && count($existingLongitudeParts) > 1) {
+                        $existingLatitudePrefix = $existingLatitudeParts[0] . "." . substr($existingLatitudeParts[1], 0, 3);
+                        $existingLongitudePrefix = $existingLatitudeParts[0] . "." . substr($existingLongitudeParts[1], 0, 3);
+
+                        if ($latitudePrefix === $existingLatitudePrefix && $longitudePrefix === $existingLongitudePrefix) {
+                            $hotelCode = $hotel['HotelCode'];
+
+                            Log::info('Updating AahaasMeta for hotel code: ' . $hotelCode);
+
+                            AahaasMeta::updateOrCreate(
+                                ['hotel_code' => $hotelCode],
+                                [
+                                    'hotel_code' => $hotelCode,
+                                    'hotel_name' => $hotel['HotelName'],
+                                    // Add other fields to update in AahaasMeta table if needed
+                                ]
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        return response()->json(['message' => 'Data mapped successfully', 'hotelData' => $hotelDataSet]);
     }
 }
