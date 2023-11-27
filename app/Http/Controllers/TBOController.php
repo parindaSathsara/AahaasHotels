@@ -76,6 +76,7 @@ class TBOController extends Controller
 
         $hotelResultArray = $getResults['HotelSearchResult']['HotelResults'];
 
+
         // $hotelResultCollection = collect($hotelResultArray);
 
 
