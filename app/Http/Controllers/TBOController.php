@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 
 class TBOController extends Controller
 {
@@ -20,6 +21,28 @@ class TBOController extends Controller
         return $Header;
     }
 
+
+    public function getDistance($latitudeFrom, $longitudeFrom, $latitudeTo, $longitudeTo)
+    {
+        $earthRadius = 6371000; //km * 1000
+        // convert from degrees to radians
+        $latFrom = deg2rad($latitudeFrom);
+        $lonFrom = deg2rad($longitudeFrom);
+        $latTo = deg2rad($latitudeTo);
+        $lonTo = deg2rad($longitudeTo);
+
+        $latDelta = $latTo - $latFrom;
+        $lonDelta = $lonTo - $lonFrom;
+
+        $val = (pow(sin($latDelta / 2), 2) + cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2));
+        $res = 2 * asin(sqrt($val));
+
+        // $angle = 2 * asin(sqrt(pow(sin($latDelta / 2), 2) +
+        //     cos($latFrom) * cos($latTo) * pow(sin($lonDelta / 2), 2)));
+
+        return round($res * $earthRadius, 2);
+    }
+
     public function basicHotel(Request $request)
     {
 
@@ -27,6 +50,11 @@ class TBOController extends Controller
         $authArray['UserName'] = "Sharmila1";
         $authArray['Password'] = "Sharmila@1234";
         $authArray['EndUserIp'] = $request->ip();
+
+
+
+        $hotelOrigin = DB::table('tbl_hotel')->get();
+
         // return $sub_array;
 
         $response = Http::withHeaders($this->getHeader())
@@ -80,7 +108,7 @@ class TBOController extends Controller
         // $hotelResultCollection = collect($hotelResultArray);
 
 
-        // return $hotelResultArray;
+
 
 
 
@@ -110,7 +138,77 @@ class TBOController extends Controller
         }
 
 
-        return $finalHotelDataSet;
+        // return $finalHotelDataSet;
+
+
+        $hotelMapped = [];
+
+
+        foreach ($hotelOrigin as $key => $ahsHotel) {
+            $originHotelLatitude = $ahsHotel->latitude;
+            $originHotelLongitude = $ahsHotel->longtitude;
+
+
+
+            $originHotelLatitude = explode('.', $originHotelLatitude);
+            $originHotelLongitude = explode('.', $originHotelLongitude);
+
+            $originHotelLatitude = substr($originHotelLatitude[1], 0, 2);
+            $originHotelLongitude = substr($originHotelLongitude[1], 0, 2);
+
+
+            foreach ($finalHotelDataSet as $key => $tboHotel) {
+                $tboHotelLatitude = $tboHotel['Latitude'];
+                $tboHotelLongitude = $tboHotel['Longitude'];
+
+
+
+                $tboHotelLatitude = explode('.', $tboHotelLatitude);
+                $tboHotelLongitude = explode('.', $tboHotelLongitude);
+
+
+                if (count($tboHotelLatitude) == 2 && count($tboHotelLongitude) == 2) {
+                    $tboHotelLatitude = substr($tboHotelLatitude[1], 0, 2);
+                    $tboHotelLongitude = substr($tboHotelLongitude[1], 0, 2);
+
+
+
+                    if ($tboHotelLatitude == $originHotelLatitude && $tboHotelLongitude == $originHotelLongitude) {
+
+
+                        if ($this->getDistance($ahsHotel->latitude, $ahsHotel->longtitude, $tboHotel['Latitude'], $tboHotel['Longitude']) < 40) {
+                            $hotelMapped[] = [$ahsHotel->hotel_name, $tboHotel['HotelName'],"Mapped"];
+                        } 
+
+                    } 
+                    // else {
+                    //     $tboHotelLatitude = substr($tboHotelLatitude, 0, 2);
+                    //     $tboHotelLongitude = substr($tboHotelLongitude, 0, 2);
+
+                    //     $originHotelLatitude = substr($originHotelLatitude, 0, 2);
+                    //     $originHotelLongitude = substr($originHotelLongitude, 0, 2);
+            
+
+                    //     if ($tboHotelLatitude == $originHotelLatitude && $tboHotelLongitude == $originHotelLongitude) {
+
+
+                    //         if ($this->getDistance($ahsHotel->latitude, $ahsHotel->longtitude, $tboHotel['Latitude'], $tboHotel['Longitude']) < 40) {
+                    //             $hotelMapped[] = ["Not Mapped",$ahsHotel->hotel_name, $tboHotel['HotelName'],];
+                    //         } 
+
+                    //     }
+                    // }
+                }
+
+            }
+
+        }
+
+
+
+
+
+        return $hotelMapped;
 
         // $finalHotelDataSet;
     }
