@@ -128,14 +128,13 @@ class TBOController extends Controller
                         if ($latitudePrefix === $existingLatitudePrefix && $longitudePrefix === $existingLongitudePrefix) {
                             $hotelCode = $hotel['HotelCode'];
 
-                            Log::info('Updating AahaasMeta for hotel code: ' . $hotelCode);
+//                            Log::info('Updating AahaasMeta for hotel code: ' . $hotelCode);
 
                             AahaasMeta::updateOrCreate(
                                 ['hotel_code' => $hotelCode],
                                 [
                                     'hotel_code' => $hotelCode,
                                     'hotel_name' => $hotel['HotelName'],
-                                    // Add other fields to update in AahaasMeta table if needed
                                 ]
                             );
                         }
