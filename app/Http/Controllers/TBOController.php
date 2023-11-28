@@ -45,6 +45,9 @@ class TBOController extends Controller
 
     public function basicHotel(Request $request)
     {
+        ini_set('max_execution_time', 10000);
+
+
 
         $authArray['ClientId'] = "ApiIntegrationNew";
         $authArray['UserName'] = "Sharmila1";
@@ -60,7 +63,6 @@ class TBOController extends Controller
         $response = Http::withHeaders($this->getHeader())
             ->post('http://api.tektravels.com/SharedServices/SharedData.svc/rest/Authenticate', $authArray)->json();
 
-
         $requestedDataSet = [
             'CityId' => '144745',
             'ClientId' => 'ApiIntegrationNew',
@@ -72,37 +74,73 @@ class TBOController extends Controller
         $staticHotelsData = Http::withHeaders($this->getHeader())
             ->post('http://api.tektravels.com/SharedServices/StaticData.svc/rest/GetHotelStaticData', $requestedDataSet)->json();
 
-        $requestHotelInfo = [
-            "CheckInDate" => "27/12/2023",
-            "NoOfNights" => "1",
-            "CountryCode" => "LK",
-            "CityId" => "144745",
-            "ResultCount" => null,
-            "PreferredCurrency" => "INR",
-            "GuestNationality" => "IN",
-            "NoOfRooms" => "1",
-            "RoomGuests" => [
-                [
-                    "NoOfAdults" => 1,
-                    "NoOfChild" => 0,
-                    "ChildAge" => null
-                ]
-            ],
-            "MaxRating" => 5,
-            "MinRating" => 0,
-            "ReviewScore" => null,
-            "IsNearBySearchAllowed" => false,
-            "EndUserIp" => $request->ip(),
-            "TokenId" => $response['TokenId']
+
+
+
+
+
+
+
+        $requestedDataSet = [
+            'ClientId' => 'ApiIntegrationNew',
+            'EndUserIp' => $request->ip(),
+            'TokenId' => $response['TokenId'],
+            'SearchType' => 1,
+            'CountryCode' => 'LK',
         ];
 
-        // return $requestHotelInfo;
+        $CityList = Http::withHeaders($this->getHeader())
+            ->post('http://api.tektravels.com/SharedServices/StaticData.svc/rest/GetDestinationSearchStaticData', $requestedDataSet)->json();
 
 
-        $getResults = Http::withHeaders($this->getHeader())
-            ->post('http://api.tektravels.com/BookingEngineService_Hotel/hotelservice.svc/rest/GetHotelResult/', $requestHotelInfo)->json();
 
-        $hotelResultArray = $getResults['HotelSearchResult']['HotelResults'];
+        foreach ($CityList['Destinations'] as $key => $cityCode) {
+            $requestHotelInfo = [
+                "CheckInDate" => "10/12/2023",
+                "NoOfNights" => "1",
+                "CountryCode" => "LK",
+                "CityId" => $cityCode['DestinationId'],
+                "ResultCount" => null,
+                "PreferredCurrency" => "INR",
+                "GuestNationality" => "IN",
+                "NoOfRooms" => "1",
+                "RoomGuests" => [
+                    [
+                        "NoOfAdults" => 1,
+                        "NoOfChild" => 0,
+                        "ChildAge" => null
+                    ]
+                ],
+                "MaxRating" => 5,
+                "MinRating" => 0,
+                "ReviewScore" => null,
+                "IsNearBySearchAllowed" => false,
+                "EndUserIp" => $request->ip(),
+                "TokenId" => $response['TokenId']
+            ];
+
+            // return $requestHotelInfo;
+
+
+            $getResults = Http::withHeaders($this->getHeader())
+                ->post('http://api.tektravels.com/BookingEngineService_Hotel/hotelservice.svc/rest/GetHotelResult/', $requestHotelInfo)->json();
+
+            // return $getResults;
+
+            if ($getResults['HotelSearchResult']['Error']['ErrorCode'] == 0) {
+                $hotelResultArray[$cityCode['CityName']] = $getResults['HotelSearchResult']['HotelResults'];
+            }
+
+        }
+
+
+
+        return $hotelResultArray;
+
+
+
+
+
 
 
         // $hotelResultCollection = collect($hotelResultArray);
@@ -177,27 +215,27 @@ class TBOController extends Controller
 
 
                         if ($this->getDistance($ahsHotel->latitude, $ahsHotel->longtitude, $tboHotel['Latitude'], $tboHotel['Longitude']) < 40) {
-                            $hotelMapped[] = [$ahsHotel->hotel_name, $tboHotel['HotelName'],"Mapped"];
-                        } 
+                            $hotelMapped[] = [$ahsHotel->hotel_name, $tboHotel['HotelName'], "Mapped"];
+                        }
 
-                    } 
-                    // else {
-                    //     $tboHotelLatitude = substr($tboHotelLatitude, 0, 2);
-                    //     $tboHotelLongitude = substr($tboHotelLongitude, 0, 2);
+                    }
+                    else {
+                        $tboHotelLatitude = substr($tboHotelLatitude, 0, 2);
+                        $tboHotelLongitude = substr($tboHotelLongitude, 0, 2);
 
-                    //     $originHotelLatitude = substr($originHotelLatitude, 0, 2);
-                    //     $originHotelLongitude = substr($originHotelLongitude, 0, 2);
-            
-
-                    //     if ($tboHotelLatitude == $originHotelLatitude && $tboHotelLongitude == $originHotelLongitude) {
+                        $originHotelLatitude = substr($originHotelLatitude, 0, 2);
+                        $originHotelLongitude = substr($originHotelLongitude, 0, 2);
 
 
-                    //         if ($this->getDistance($ahsHotel->latitude, $ahsHotel->longtitude, $tboHotel['Latitude'], $tboHotel['Longitude']) < 40) {
-                    //             $hotelMapped[] = ["Not Mapped",$ahsHotel->hotel_name, $tboHotel['HotelName'],];
-                    //         } 
+                        if ($tboHotelLatitude == $originHotelLatitude && $tboHotelLongitude == $originHotelLongitude) {
 
-                    //     }
-                    // }
+
+                            if ($this->getDistance($ahsHotel->latitude, $ahsHotel->longtitude, $tboHotel['Latitude'], $tboHotel['Longitude']) < 40) {
+                                $hotelMapped[] = ["Not Mapped",$ahsHotel->hotel_name, $tboHotel['HotelName'],];
+                            } 
+
+                        }
+                    }
                 }
 
             }
