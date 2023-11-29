@@ -22,4 +22,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 
 Route::post('/getTBODataResponse', [TBOController::class, 'basicHotel']);
+Route::get('/verifyTwilioApi', [TBOController::class, 'twilioSMS']);
+
 
