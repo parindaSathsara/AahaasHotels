@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
+use App\Models\Hotel;
 
 
 use Twilio\Rest\Client;
@@ -47,6 +48,7 @@ class TBOController extends Controller
     }
 
 
+
     public function twilioSMS()
     {
         $sid = "AC54beb1fcdd13fcdbd8627046b4e91c87";
@@ -65,6 +67,8 @@ class TBOController extends Controller
 
     }
 
+
+
     public function basicHotel(Request $request)
     {
         ini_set('max_execution_time', 10000);
@@ -78,7 +82,8 @@ class TBOController extends Controller
 
 
 
-        $hotelOrigin = DB::table('tbl_hotel')->get();
+//        $hotelOrigin = DB::table('tbl_hotel')->get();
+        $hotelOrigin = Hotel::all();
 
         // return $sub_array;
 
@@ -152,6 +157,8 @@ class TBOController extends Controller
             if ($getResults['HotelSearchResult']['Error']['ErrorCode'] == 0) {
                 $hotelResultArray[$cityCode['CityName']] = $getResults['HotelSearchResult']['HotelResults'];
             }
+
+//            return $hotelResultArray;
 
         }
 
@@ -254,7 +261,7 @@ class TBOController extends Controller
 
                     //         if ($this->getDistance($ahsHotel->latitude, $ahsHotel->longtitude, $tboHotel['Latitude'], $tboHotel['Longitude']) < 40) {
                     //             $hotelMapped[] = ["Not Mapped",$ahsHotel->hotel_name, $tboHotel['HotelName'],];
-                    //         } 
+                    //         }
 
                     //     }
                     // }
