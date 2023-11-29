@@ -22,6 +22,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 
 Route::post('/getTBODataResponse', [TBOController::class, 'basicHotel']);
+Route::post('/mergeAhsTboHotels', [TBOController::class, 'mapHotelsAhsTbo']);
+
+Route::post('/createHotelDetailsAhs', [TBOController::class, 'createHotelDetailsAhs']);
+
 Route::get('/verifyTwilioApi', [TBOController::class, 'twilioSMS']);
-
-

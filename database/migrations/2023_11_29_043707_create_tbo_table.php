@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('hotel_name', 255);
             $table->string('hotel_category')->nullable();
             $table->string('star_rating');
-            $table->string('hotel_description');
+            $table->text('hotel_description');
             $table->string('hotel_promotion')->nullable();
             $table->string('hotel_policy')->nullable();
             $table->double('published_price');
@@ -26,8 +26,8 @@ return new class extends Migration
             $table->string('hotel_address');
             $table->string('hotel_contact_no')->nullable();
             $table->string('hotel_map')->nullable();
-            $table->double('latitude');
-            $table->double('longitude');
+            $table->string('latitude');
+            $table->string('longitude');
             $table->string('hotel_location')->nullable();
             $table->integer('supplier_price')->nullable();
             $table->string('room_details')->nullable();
