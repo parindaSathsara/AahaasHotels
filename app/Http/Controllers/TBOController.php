@@ -320,8 +320,8 @@ class TBOController extends Controller
             $originHotelLatitude = explode('.', $originHotelLatitude);
             $originHotelLongitude = explode('.', $originHotelLongitude);
 
-            $originHotelLatitude = substr($originHotelLatitude[1], 0, 2);
-            $originHotelLongitude = substr($originHotelLongitude[1], 0, 2);
+            $originHotelLatitude = substr($originHotelLatitude[1], 0, 3);
+            $originHotelLongitude = substr($originHotelLongitude[1], 0, 3);
 
 
             foreach ($tbo as $key => $tboHotel) {
@@ -335,8 +335,8 @@ class TBOController extends Controller
 
 
                 if (count($tboHotelLatitude) == 2 && count($tboHotelLongitude) == 2) {
-                    $tboHotelLatitude = substr($tboHotelLatitude[1], 0, 2);
-                    $tboHotelLongitude = substr($tboHotelLongitude[1], 0, 2);
+                    $tboHotelLatitude = substr($tboHotelLatitude[1], 0, 3);
+                    $tboHotelLongitude = substr($tboHotelLongitude[1], 0, 3);
 
 
                     if ($tboHotelLatitude == $originHotelLatitude && $tboHotelLongitude == $originHotelLongitude) {
