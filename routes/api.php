@@ -20,7 +20,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 
-
+Route::post('/saveStaticData', [TBOController::class, 'saveStaticData']);
 Route::post('/getTBODataResponse', [TBOController::class, 'basicHotel']);
 Route::post('/mergeAhsTboHotels', [TBOController::class, 'mapHotelsAhsTbo']);
 

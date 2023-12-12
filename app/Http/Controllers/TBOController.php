@@ -67,6 +67,58 @@ class TBOController extends Controller
     }
 
 
+    public function saveStaticData(Request $request)
+    {
+        ini_set('max_execution_time', 10000);
+
+        // return "Data";
+        $authArray['ClientId'] = "ApiIntegrationNew";
+        $authArray['UserName'] = "Sharmila1";
+        $authArray['Password'] = "Sharmila@1234";
+        $authArray['EndUserIp'] = $request->ip();
+        // $hotelOrigin = Hotel::all();
+        $response = Http::withHeaders($this->getHeader())
+            ->post('http://api.tektravels.com/SharedServices/SharedData.svc/rest/Authenticate', $authArray)->json();
+
+        $requestedDataSet = [
+            'ClientId' => 'ApiIntegrationNew',
+            'EndUserIp' => $request->ip(),
+            'TokenId' => $response['TokenId'],
+            'SearchType' => 1,
+            'CountryCode' => 'LK',
+        ];
+
+        $CityList = Http::withHeaders($this->getHeader())
+            ->post('http://api.tektravels.com/SharedServices/StaticData.svc/rest/GetDestinationSearchStaticData', $requestedDataSet)->json();
+
+        $hotelResultArray = [];
+        $staticHotelData = [];
+
+        foreach ($CityList['Destinations'] as $key => $cityCode) {
+            $requestedDataSet = [
+                'CityId' => $cityCode,
+                'ClientId' => 'ApiIntegrationNew',
+                'EndUserIp' => $request->ip(),
+                'TokenId' => $response['TokenId'],
+                "IsCompactData" => "true"
+            ];
+
+            $staticHotelsData = Http::withHeaders($this->getHeader())
+                ->post('http://api.tektravels.com/SharedServices/StaticData.svc/rest/GetHotelStaticData', $requestedDataSet)->json();
+
+            if ($staticHotelsData["Error"]["ErrorCode"] == 0) {
+
+                $utf8Xml = str_replace("utf-16", "utf-8", $staticHotelsData['HotelData']);
+                $staticDataXmlToJson = json_decode(json_encode(simplexml_load_string($utf8Xml)), true);
+
+                $staticHotelData[] = $staticDataXmlToJson['BasicPropertyInfo'];
+            }
+        }
+
+        return $staticHotelData;
+    }
+
+
 
     public function basicHotel(Request $request)
     {
@@ -81,10 +133,6 @@ class TBOController extends Controller
         // $hotelOrigin = Hotel::all();
         $response = Http::withHeaders($this->getHeader())
             ->post('http://api.tektravels.com/SharedServices/SharedData.svc/rest/Authenticate', $authArray)->json();
-
-
-
-
 
 
         $requestedDataSet = [
