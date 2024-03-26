@@ -143,34 +143,22 @@ class TBOController extends Controller
             'CountryCode' => 'LK',
         ];
 
+
+
+
         $CityList = Http::withHeaders($this->getHeader())
             ->post('http://api.tektravels.com/SharedServices/StaticData.svc/rest/GetDestinationSearchStaticData', $requestedDataSet)->json();
-
-
-        // $CityListStatic = [
-        //     [
-        //         "DestinationId" => 144745,
-        //         "CityName" => "Colombo",
-        //     ],
-        //     [
-        //         "DestinationId" => 144191,
-        //         "CityName" => "Bentota",
-        //     ],
-        //     [
-        //         "DestinationId" => 122254,
-        //         "CityName" => "Kandy",
-        //     ],
-
-        // ];
 
 
         $mappedCities = [];
         $hotelResultArray = [];
 
+
+
         foreach ($CityList['Destinations'] as $key => $cityCode) {
             // foreach ($CityListStatic as $key => $cityCode) {
             $requestHotelInfo = [
-                "CheckInDate" => "10/12/2023",
+                "CheckInDate" => "30/04/2024",
                 "NoOfNights" => "1",
                 "CountryCode" => "LK",
                 "CityId" => $cityCode['DestinationId'],
@@ -186,14 +174,13 @@ class TBOController extends Controller
                     ]
                 ],
                 "MaxRating" => 5,
-                "MinRating" => 0,
+                "MinRating" => 3,
                 "ReviewScore" => null,
                 "IsNearBySearchAllowed" => false,
                 "EndUserIp" => $request->ip(),
                 "TokenId" => $response['TokenId']
             ];
 
-            // return $requestHotelInfo;
 
 
             $getResults = Http::withHeaders($this->getHeader())
@@ -206,7 +193,6 @@ class TBOController extends Controller
                 $mappedCities[] = $cityCode['DestinationId'];
             }
         }
-
 
 
 
@@ -239,7 +225,8 @@ class TBOController extends Controller
         }
 
 
-        // return $staticHotelData;
+
+
 
 
         foreach ($staticHotelData as $key => $staticHotel) {
@@ -247,6 +234,8 @@ class TBOController extends Controller
                 $hotelStaticDataSet[] = $hotelIndex;
             }
         }
+
+
 
         HotelMeta::truncate();
         TBO::truncate();
@@ -330,19 +319,6 @@ class TBOController extends Controller
 
 
         return $finalHotelDataSet;
-
-
-
-
-
-
-
-
-
-
-        // return $hotelMapped;
-
-        // $finalHotelDataSet;
     }
 
 
@@ -357,19 +333,25 @@ class TBOController extends Controller
 
         $hotelMapped = [];
 
+        $mappedIDS = [];
+
+
 
 
         foreach ($aahaas as $key => $ahsHotel) {
             $originHotelLatitude = $ahsHotel->latitude;
-            $originHotelLongitude = $ahsHotel->longtitude;
+            $originHotelLongitude = $ahsHotel->longitude;
 
 
 
             $originHotelLatitude = explode('.', $originHotelLatitude);
             $originHotelLongitude = explode('.', $originHotelLongitude);
 
-            $originHotelLatitude = substr($originHotelLatitude[1], 0, 3);
-            $originHotelLongitude = substr($originHotelLongitude[1], 0, 3);
+            if (count($originHotelLatitude) == 2 && count($originHotelLongitude) == 2) {
+                $originHotelLatitude = substr($originHotelLatitude[1], 0, 3);
+                $originHotelLongitude = substr($originHotelLongitude[1], 0, 3);
+            }
+
 
 
             foreach ($tbo as $key => $tboHotel) {
@@ -387,9 +369,10 @@ class TBOController extends Controller
                     $tboHotelLongitude = substr($tboHotelLongitude[1], 0, 3);
 
 
+
                     if ($tboHotelLatitude == $originHotelLatitude && $tboHotelLongitude == $originHotelLongitude) {
-                        if ($this->getDistance($ahsHotel->latitude, $ahsHotel->longtitude, $tboHotel->latitude, $tboHotel->longitude) < 40) {
-                            $hotelMapped[] = ["tbo_code" => $tboHotel->hotel_code, "ahs_code" => $ahsHotel->id];
+                        if ($this->getDistance($ahsHotel->latitude, $ahsHotel->longitude, $tboHotel->latitude, $tboHotel->longitude) < 40) {
+                            $hotelMapped[] = ["tbo_code" => $tboHotel->hotel_code, "ahs_code" => $ahsHotel->ID];
                         }
                     }
                     // else {
@@ -412,6 +395,8 @@ class TBOController extends Controller
                 }
             }
         }
+
+        return $hotelMapped;
 
         foreach ($hotelMapped as $key) {
             // return $key['origin'];
